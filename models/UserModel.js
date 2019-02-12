@@ -26,7 +26,7 @@ module.exports = {
     addExercise: async (sid, data) => {
         try {
             let user = await UserModel.findOne({sid})
-            if(!user) return {message: 'Not Found.'}
+            if(!user) return null
             user.exercises.push(data)
             user.markModified('exercises')
             return await user.save()
