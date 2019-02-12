@@ -23,7 +23,10 @@ app.get('/', (req, res) => {
 app.post('/api/exercise/new-user', async (req, res) => {
   let { username } = req.body
   try {
-    let user = await UserFunc.create(username)
+    if(!/^\w{3,25}$/.test(username))
+      return res.status(400).json({message: 'please fill all fields with the required format.'})
+
+    let user = await UserFunc.createUser(username)
     res.json(user)
   } catch(ex) {
     res.status(400).json({error: ex})
@@ -31,15 +34,16 @@ app.post('/api/exercise/new-user', async (req, res) => {
 })
 
 app.post('/api/exercise/add', async (req, res) => {
-  let { userId, description, duration, date } = req.body
+  let { userId, description, duration, date } = req.body, d = new Date(date)
   userId = (userId || '').trim()
   description = (description || '').trim()
   duration = (duration || '').trim()
   try {
     if(!/^\w{5,15}$/.test(userId) || !/^.{1,250}$/.test(description) || !/^\d+$/.test(duration))
-      return res.status(400).json({message: 'please fill all required fields.'})
+      return res.status(400).json({message: 'please fill all fields with the required format.'})
     
-    let user = await UserFunc.addExercise({userId, description, duration: Number(duration), date: new Date(date)})
+	  date = !!(d * 1)? d: undefined
+    let user = await UserFunc.addExercise(userId, { description, duration: Number(duration), date})
     res.json(user)
   } catch(ex) {
     res.status(500).json({error: ex})

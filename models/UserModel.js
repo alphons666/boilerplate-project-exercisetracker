@@ -5,7 +5,7 @@ const mongoose = require('mongoose'),
 const ExerciseSchema = new Schema({
     description: {type: String, required: true},
     duration: {type: Number, required: true},
-    date: {type: Date, default: Date.now}
+    date: Date
 })
 
 const UserSchema = new Schema({
@@ -14,6 +14,23 @@ const UserSchema = new Schema({
     exercises: {type: [ExerciseSchema], default: []}
 })
 
+const UserModel = mongoose.model('User', UserSchema)
+
 module.exports = {
-    
+    createUser(username){
+        let user = new UserModel({ username })
+        return user.save()
+    },
+    addExercise: async (shortid, data) => {
+        try {
+            let user = await UserModel.findOne({shortid}),
+                exercise = UserModel.exercises.create(data)
+            if(!user) return {}
+            user.exercises.push(exercise)
+            user.markModified('exercises')
+            return await user.save()
+        } catch (error) {
+            return { error }
+        }
+    }
 }
