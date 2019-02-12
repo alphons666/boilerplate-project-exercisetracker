@@ -2,6 +2,8 @@ const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 
+const UserFunc = require('./models/UserModel')
+
 const cors = require('cors')
 
 const mongoose = require('mongoose')
@@ -18,6 +20,31 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
+app.post('/api/exercise/new-user', async (req, res) => {
+  let { username } = req.body
+  try {
+    let user = await UserFunc.create(username)
+    res.json(user)
+  } catch(ex) {
+    res.status(400).json({error: ex})
+  }
+})
+
+app.post('/api/exercise/add', async (req, res) => {
+  let { userId, description, duration, date } = req.body
+  userId = (userId || '').trim()
+  description = (description || '').trim()
+  duration = (duration || '').trim()
+  try {
+    if(!/^\w{5,15}$/.test(userId) || !/^.{1,250}$/.test(description) || !/^\d+$/.test(duration))
+      return res.status(400).json({message: 'please fill all required fields.'})
+    
+    let user = await UserFunc.addExercise({userId, description, duration: Number(duration), date: new Date(date)})
+    res.json(user)
+  } catch(ex) {
+    res.status(500).json({error: ex})
+  }
+})
 
 // Not found middleware
 app.use((req, res, next) => {
