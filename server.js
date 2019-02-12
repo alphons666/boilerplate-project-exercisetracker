@@ -20,33 +20,53 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
+app.get('/api/exercise/log', async (req, res) => {
+  let { userId, from, to, limit } = req.query,
+    notFound = {message: 'Not Found.'},
+    d = null
+  try {
+    if(!/^[\w_.-]{5,15}$/.test(userId))
+      return res.json(404, notFound)
+    
+    from = (d = new Date(from)) * 1? d: null
+    to = (d = new Date(to)) * 1? d: null
+    limit = (d = parseInt(limit))? d: null
+
+    let user = await UserFunc.getUser(userId, limit, from, to)
+    if(!user)
+      return res.json(404, notFound)
+    res.json(UserFunc.transform(user))
+  } catch (error) {
+    res.json(500, {error: error})
+  }
+})
+
 app.post('/api/exercise/new-user', async (req, res) => {
   let { username } = req.body
   try {
-    if(!/^\w{3,25}$/.test(username))
-      return res.status(400).json({message: 'please fill all fields with the required format.'})
+
+    username = (username || '').trim()
+    if(!/^.{3,25}$/.test(username))
+      return res.json(400, {message: 'please fill all fields with the required format.'})
 
     let user = await UserFunc.createUser(username)
-    res.json(user)
+    res.json(UserFunc.transform(user))
   } catch(ex) {
-    res.status(400).json({error: ex})
+    res.json(500, {error: ex})
   }
 })
 
 app.post('/api/exercise/add', async (req, res) => {
   let { userId, description, duration, date } = req.body, d = new Date(date)
-  userId = (userId || '').trim()
-  description = (description || '').trim()
-  duration = (duration || '').trim()
   try {
-    if(!/^\w{5,15}$/.test(userId) || !/^.{1,250}$/.test(description) || !/^\d+$/.test(duration))
-      return res.status(400).json({message: 'please fill all fields with the required format.'})
+    if(!/^[\w_.-]{5,15}$/.test(userId) || !/^.{1,250}$/.test(description) || !/^\d+$/.test(duration))
+      return res.json(400, {message: 'please fill all fields with the required format.'})
     
 	  date = !!(d * 1)? d: undefined
     let user = await UserFunc.addExercise(userId, { description, duration: Number(duration), date})
-    res.json(user)
+    res.json(UserFunc.transform(user))
   } catch(ex) {
-    res.status(500).json({error: ex})
+    res.json(500, {error: ex})
   }
 })
 
